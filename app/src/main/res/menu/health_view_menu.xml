@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+            android:id="@+id/health_data_view"
+            android:title="Health Data"
+            app:showAsAction="ifRoom"
+            android:icon="@drawable/ic_create_new_folder_black_24dp"
+    />
+    <item
+            android:id="@+id/account_data_view"
+            android:title="Account Data"
+            app:showAsAction="ifRoom"
+            android:icon="@drawable/ic_account_balance_wallet_white_24dp"
+    />
+    <item
+            android:id="@+id/action_personal_data"
+            android:title="Personal Data"
+            app:showAsAction="ifRoom"
+            android:icon="@drawable/ic_account_box_white_24dp"
+    />
+</menu>

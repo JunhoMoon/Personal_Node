@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Personal_Node</string>
+    <string name="msg_token_fmt" translatable="false">InstanceID Token: %s</string>
+    <string name="default_notification_channel_id">Channel ID</string>
+    <string name="default_notification_channel_name" translatable="true">Test</string>
+    <string name="HIMS_Server_AP" translatable="true">http://220.149.87.125:10000</string>
+    <string name="FCM_TOKEN" translatable="true"></string>
+    <string name="fcm_message">FCM Message</string>
+
+    <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
+    <string name="facebook_application_id" translatable="false">fb365366260805452</string>
+    <string name="facebook_login_protocol_scheme" translatable="false">fb365366260805452</string>
+    <!-- Twitter consumer key and secret -->
+    <string name="twitter_consumer_key" translatable="false">Mg42BoVZzAyXNxgiEKnT79SZI</string>
+    <string name="twitter_consumer_secret" translatable="false">CpDgDhEVRVDUbPYPTSpqGjKN3Nu12dretpfJLDwmephYMBLnjj
+    </string>
+    <string name="title_activity_test_tab">TestTab</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_main2">Main2Activity</string>
+</resources>

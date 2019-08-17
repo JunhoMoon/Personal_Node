@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "561200827934",
+    "firebase_url": "https://hims-128fe.firebaseio.com",
+    "project_id": "hims-128fe",
+    "storage_bucket": "hims-128fe.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:561200827934:android:8a6b927b28a56a8e",
+        "android_client_info": {
+          "package_name": "com.hims.personal_node"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "561200827934-7o37d99pu2s90hvdmq5bertr9mv368io.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hims.personal_node",
+            "certificate_hash": "de3d7b9c8b2251c0dd5854ff7dab7d4da874f1af"
+          }
+        },
+        {
+          "client_id": "561200827934-i7c2m4q5jg5b6daid4doqv90rvleq3f8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmpTgtN0ySBcxRtlOxLzxixtFGazaOVN0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "561200827934-i7c2m4q5jg5b6daid4doqv90rvleq3f8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
