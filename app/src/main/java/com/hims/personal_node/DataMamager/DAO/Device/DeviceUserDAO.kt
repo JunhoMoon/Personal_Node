@@ -10,8 +10,10 @@ import com.hims.personal_node.Model.Device.DeviceUser
 interface DeviceUserDAO: BaseDao<DeviceUser> {
     @Query("SELECT * FROM DeviceUser")
     fun getall() : LiveData<List<DeviceUser>>
-//    fun getall() : List<DeviceUser>
 
     @Query("SELECT count(*) FROM DeviceUser where user_kn like :node_kn")
     fun checkDevice(node_kn: String) : Int
+
+    @Query("SELECT * FROM DeviceUser where user_kn like :node_kn")
+    fun getByNodeKN(node_kn: String) : DeviceUser
 }

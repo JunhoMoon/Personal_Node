@@ -8,15 +8,13 @@ import androidx.room.PrimaryKey
 data class HealthMessage(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "_id")
-    var _id: Long,
-    @ColumnInfo(name = "node_kn")
-    var node_kn:String,
-    @ColumnInfo(name = "processType")
-    var processType:String,
+    var _id: Long?,
+    @ColumnInfo(name = "sender")
+    var sender:String,
+    @ColumnInfo(name = "messageType")
+    var messageType:String,
     @ColumnInfo(name = "message")
     var message:String,
-    @ColumnInfo(name = "viewState")
-    var viewState:Int = 0,
-    @ColumnInfo(name = "decision")
-    var decision:Int = 0
+    @ColumnInfo(name = "reg_date")
+    var reg_date:String
 )

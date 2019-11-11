@@ -10,5 +10,7 @@ import com.hims.personal_node.Model.Health.Health
 interface HealthDAO:BaseDao<Health>{
     @Query("SELECT * FROM Health")
     fun getall() : LiveData<List<Health>>
-//    fun getall() : List<Health>
+
+    @Query("SELECT * FROM Health")
+    fun getall2() : List<Health>
 }

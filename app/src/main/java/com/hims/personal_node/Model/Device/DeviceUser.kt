@@ -8,5 +8,7 @@ import androidx.room.PrimaryKey
 data class DeviceUser(
     @PrimaryKey
     @ColumnInfo(name = "user_kn")
-    var user_kn:String
+    var user_kn:String,
+    @ColumnInfo(name = "cert_key")
+    var cert_key:String?
 )

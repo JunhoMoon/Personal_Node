@@ -1,13 +1,21 @@
 package com.hims.personal_node.Activitys.Fragment.Health
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.hims.personal_node.Activitys.Adaoter.HealthMessageRecycleAdapter
+import com.hims.personal_node.Activitys.ViewModel.Health.HealthViewModel
+import com.hims.personal_node.Activitys.ViewModel.Health.HealthViewModelFactory
 import com.hims.personal_node.R
 
-class HealthMessage : Fragment() {
+class HealthMessage(var node_kn:String, var mContext: Context) : Fragment() {
+    private lateinit var healthViewModel: HealthViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,6 +31,15 @@ class HealthMessage : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        //뷰 설정
+        val activity = activity as Context
+        val recyclerView = view?.findViewById<RecyclerView>(R.id.fragment_health_message_recycle_form)
+        var adapter = HealthMessageRecycleAdapter(mContext, node_kn)
+        recyclerView?.adapter = adapter
+        recyclerView?.layoutManager = LinearLayoutManager(activity)
+
+        healthViewModel = ViewModelProvider(this, HealthViewModelFactory(getActivity()?.application!!, node_kn)).get(HealthViewModel::class.java)
+        healthViewModel.allHealthMessage.observe(this, androidx.lifecycle.Observer { healthMessages ->
+            healthMessages?.let { adapter.setHealthMessage(it) }
+        })
     }
 }

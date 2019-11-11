@@ -30,6 +30,17 @@ class CreatePrivateInformation : AppCompatActivity() {
     var server: RetrofitService? = null
     private var himsdb: HIMSDB? = null
 
+    var selectedGender:String? = null
+    var selectedRace:String? = null
+    var selectedCountry:String? = null
+    var selectedAdmin:String? = null
+    var selectedCity:String? = null
+    var selectedJob1:String? = null
+    var selectedJob2:String? = null
+    var selectedJob3:String? = null
+    var selectedJob4:String? = null
+    var selectedEdu:String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_private_information)
@@ -105,8 +116,10 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val gender = parent.selectedItem as Gender
                     when (gender.gender_key) {
                         0 -> {
+                            selectedGender = null
                         }
                         3 -> {
+                            selectedGender = null
                             server?.getOtherGenders()?.enqueue(object : Callback<MutableList<Gender>> {
                                 override fun onFailure(call: Call<MutableList<Gender>>?, t: Throwable?) {
                                     Log.d("onFailure : ", t?.message)
@@ -178,6 +191,7 @@ class CreatePrivateInformation : AppCompatActivity() {
                             others_gender_spinner.visibility = View.GONE
                             gender_text.visibility = View.GONE
                             gender_text.setText(gender.gender_name)
+                            selectedGender = gender.gender_key.toString()
                         }
                     }
                 }
@@ -192,13 +206,16 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val gender = parent.selectedItem as Gender
                     when (gender.gender_key) {
                         0 -> {
+                            selectedGender = null
                         }
                         99 -> {
                             gender_text.setText("")
                             gender_text.visibility = View.VISIBLE
+                            selectedGender = "etc"
                         }
                         else -> {
                             gender_text.setText(gender.gender_name)
+                            selectedGender = gender.gender_key.toString()
                         }
                     }
                 }
@@ -302,14 +319,17 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val race = parent.selectedItem as Race
                     when (race.race_key) {
                         0 -> {
+                            selectedRace = null
                         }
                         99 -> {
                             race_text.setText("")
                             race_text.visibility = View.VISIBLE
+                            selectedRace = "etc"
                         }
                         else -> {
                             race_text.setText(race.race_name)
                             race_text.visibility = View.GONE
+                            selectedRace = race.race_key.toString()
                         }
                     }
                 }
@@ -373,6 +393,9 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val country = parent.selectedItem as Country
                     when (country.country_no) {
                         0 -> {
+                            selectedCountry = null
+                            selectedAdmin = null
+                            selectedCity = null
                         }
                         999 -> {
                             country_text.setText("")
@@ -383,6 +406,9 @@ class CreatePrivateInformation : AppCompatActivity() {
                             city_spinner.visibility = View.GONE
                             city_text.setText("")
                             city_text.visibility = View.VISIBLE
+                            selectedCountry = "etc"
+                            selectedAdmin = "etc"
+                            selectedCity = "etc"
                         }
                         else -> {
                             country_text.setText(country.country_name)
@@ -393,6 +419,9 @@ class CreatePrivateInformation : AppCompatActivity() {
                             city_spinner.visibility = View.GONE
                             city_text.setText("")
                             city_text.visibility = View.GONE
+                            selectedCountry = country.country_no.toString()
+                            selectedAdmin = null
+                            selectedCity = null
 
                             server?.getAdmin(country.country_no)?.enqueue(object : Callback<MutableList<Admin>> {
                                 override fun onFailure(call: Call<MutableList<Admin>>?, t: Throwable?) {
@@ -471,6 +500,8 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val admin = parent.selectedItem as Admin
                     when (admin.admin_no) {
                         0 -> {
+                            selectedAdmin = null
+                            selectedCity = null
                         }
                         9999 -> {
                             admin_text.setText("")
@@ -478,6 +509,8 @@ class CreatePrivateInformation : AppCompatActivity() {
                             city_spinner.visibility = View.GONE
                             city_text.setText("")
                             city_text.visibility = View.VISIBLE
+                            selectedAdmin = "etc"
+                            selectedCity = "etc"
                         }
                         else -> {
                             admin_text.setText(admin.admin_name)
@@ -485,6 +518,9 @@ class CreatePrivateInformation : AppCompatActivity() {
                             city_spinner.visibility = View.GONE
                             city_text.setText("")
                             city_text.visibility = View.GONE
+
+                            selectedAdmin = admin.admin_no.toString()
+                            selectedCity = null
 
                             server?.getCity(admin.admin_no)?.enqueue(object : Callback<MutableList<City>> {
                                 override fun onFailure(call: Call<MutableList<City>>?, t: Throwable?) {
@@ -563,14 +599,17 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val city = parent.selectedItem as City
                     when (city.city_no) {
                         0 -> {
+                            selectedCity = null
                         }
                         99999 -> {
                             city_text.setText("")
                             city_text.visibility = View.VISIBLE
+                            selectedCity = "etc"
                         }
                         else -> {
                             city_text.setText(city.city_name)
                             city_text.visibility = View.GONE
+                            selectedCity = city.city_no.toString()
                         }
                     }
                 }
@@ -640,6 +679,10 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val job = parent.selectedItem as Job
                     when (job.job_key) {
                         "0" -> {
+                            selectedJob1 = null
+                            selectedJob2 = null
+                            selectedJob3 = null
+                            selectedJob4 = null
                         }
                         "99-9999" -> {
                             job_text.setText("")
@@ -647,6 +690,10 @@ class CreatePrivateInformation : AppCompatActivity() {
                             job2_spinner.visibility = View.GONE
                             job3_spinner.visibility = View.GONE
                             job4_spinner.visibility = View.GONE
+                            selectedJob1 = "etc"
+                            selectedJob2 = null
+                            selectedJob3 = null
+                            selectedJob4 = null
                         }
                         else -> {
                             job_text.setText(job.job_name)
@@ -654,6 +701,11 @@ class CreatePrivateInformation : AppCompatActivity() {
                             job2_spinner.visibility = View.GONE
                             job3_spinner.visibility = View.GONE
                             job4_spinner.visibility = View.GONE
+
+                            selectedJob1 = job.job_key
+                            selectedJob2 = null
+                            selectedJob3 = null
+                            selectedJob4 = null
 
                             server?.getJob(job.job_key)?.enqueue(object : Callback<MutableList<Job>> {
                                 override fun onFailure(call: Call<MutableList<Job>>?, t: Throwable?) {
@@ -733,18 +785,27 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val job = parent.selectedItem as Job
                     when (job.job_key) {
                         "0" -> {
+                            selectedJob2 = null
+                            selectedJob3 = null
+                            selectedJob4 = null
                         }
                         "99-9999" -> {
                             job_text.setText("")
                             job_text.visibility = View.VISIBLE
                             job3_spinner.visibility = View.GONE
                             job4_spinner.visibility = View.GONE
+                            selectedJob2 = "etc"
+                            selectedJob3 = null
+                            selectedJob4 = null
                         }
                         else -> {
                             job_text.setText(job.job_name)
                             job_text.visibility = View.GONE
                             job3_spinner.visibility = View.GONE
                             job4_spinner.visibility = View.GONE
+                            selectedJob2 = job.job_key
+                            selectedJob3 = null
+                            selectedJob4 = null
 
                             server?.getJob(job.job_key)?.enqueue(object : Callback<MutableList<Job>> {
                                 override fun onFailure(call: Call<MutableList<Job>>?, t: Throwable?) {
@@ -824,14 +885,22 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val job = parent.selectedItem as Job
                     when (job.job_key) {
                         "0" -> {
+                            selectedJob3 = null
+                            selectedJob4 = null
                         }
                         "99-9999" -> {
                             job_text.setText("")
                             job_text.visibility = View.VISIBLE
                             job4_spinner.visibility = View.GONE
+                            selectedJob3 = "etc"
+                            selectedJob4 = null
                         }
                         else -> {
+                            job_text.setText(job.job_name)
+                            job_text.visibility = View.GONE
                             job4_spinner.visibility = View.GONE
+                            selectedJob3 = job.job_key
+                            selectedJob4 = null
 
                             server?.getJob(job.job_key)?.enqueue(object : Callback<MutableList<Job>> {
                                 override fun onFailure(call: Call<MutableList<Job>>?, t: Throwable?) {
@@ -910,14 +979,17 @@ class CreatePrivateInformation : AppCompatActivity() {
                     val job = parent.selectedItem as Job
                     when (job.job_key) {
                         "0" -> {
+                            selectedJob4 = null
                         }
                         "99-9999" -> {
                             job_text.setText("")
                             job_text.visibility = View.VISIBLE
+                            selectedJob4 = "etc"
                         }
                         else -> {
                             job_text.setText(job.job_name)
                             job_text.visibility = View.GONE
+                            selectedJob4 = job.job_key
                         }
                     }
                 }
@@ -927,29 +999,29 @@ class CreatePrivateInformation : AppCompatActivity() {
                 }
             }
 
-            var edu_list = mutableListOf<String>(
-                "Level of Education",
-                "Elementary school graduation",
-                "middle School graduation",
-                "high school graduation",
-                "Associate Degree of Arts",
-                "Associate Degree of Science",
-                "Bachelor of Arts",
-                "Bachelor of Science",
-                "Bachelor of Fine Art",
-                "Bachelor of Law",
-                "Master of Arts",
-                "Master of Science",
-                "Master of Fine Art",
-                "Master of Business Administration",
-                "Doctor of Philosophy",
-                "Doctor of the science of Law",
-                "Doctor of Medicine",
-                "etc."
+            var edu_list = mutableListOf<Education>(
+                Education(0, "Level of Education"),
+                Education(1, "Elementary school graduation"),
+                Education(2, "middle School graduation"),
+                Education(3, "high school graduation"),
+                Education(4, "Associate Degree of Arts"),
+                Education(5, "Associate Degree of Science"),
+                Education(6, "Bachelor of Arts"),
+                Education(7, "Bachelor of Science"),
+                Education(8, "Bachelor of Fine Art"),
+                Education(9, "Bachelor of Law"),
+                Education(10, "Master of Arts"),
+                Education(11, "Master of Science"),
+                Education(12, "Master of Fine Art"),
+                Education(13, "Master of Business Administration"),
+                Education(14, "Doctor of Philosophy"),
+                Education(15, "Doctor of the science of Law"),
+                Education(16, "Doctor of Medicine"),
+                Education(999, "etc")
             )
 
             var adapt = object :
-                ArrayAdapter<String>(this@CreatePrivateInformation, android.R.layout.simple_spinner_item, edu_list) {
+                ArrayAdapter<Education>(this@CreatePrivateInformation, android.R.layout.simple_spinner_item, edu_list) {
                 override fun isEnabled(position: Int): Boolean {
                     return position != 0
                 }
@@ -969,20 +1041,25 @@ class CreatePrivateInformation : AppCompatActivity() {
             }
 
             adapt.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
             edu_spinner.adapter = adapt
+
             edu_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-                    val grade = parent.selectedItem as String
-                    when (grade) {
-                        "Level of Education" -> {
+                    val edu = parent.selectedItem as Education
+                    when (edu.edu_key) {
+                        0 -> {
+                            selectedEdu = null
                         }
-                        "etc." -> {
+                        999 -> {
                             edu_text.setText("")
                             edu_text.visibility = View.VISIBLE
+                            selectedEdu = "etc"
                         }
                         else -> {
-                            edu_text.setText(grade)
+                            edu_text.setText(edu.edu_name)
                             edu_text.visibility = View.GONE
+                            selectedEdu = edu.edu_key.toString()
                         }
                     }
                 }
@@ -1025,17 +1102,56 @@ class CreatePrivateInformation : AppCompatActivity() {
                         messageToast("Please enter your Education Level.")
                     }
                     else -> {
+                        if (selectedGender.equals("etc")){
+                            selectedGender = gender_text.text.toString()
+                        }
+                        if (selectedRace.equals("etc")){
+                            selectedRace = race_text.text.toString()
+                        }
+                        if (selectedCountry.equals("etc")){
+                            selectedCountry = country_text.text.toString()
+                        }
+                        if (selectedAdmin.equals("etc")){
+                            selectedAdmin = admin_text.text.toString()
+                        }
+                        if (selectedCity.equals("etc")){
+                            selectedCity = city_text.text.toString()
+                        }
+                        if (selectedJob1.equals("etc")){
+                            selectedJob1 = job_text.text.toString()
+                        }
+                        if (selectedJob2.equals("etc")){
+                            selectedJob2 = job_text.text.toString()
+                        }
+                        if (selectedJob3.equals("etc")){
+                            selectedJob3 = job_text.text.toString()
+                        }
+                        if (selectedJob4.equals("etc")){
+                            selectedJob4 = job_text.text.toString()
+                        }
+                        if (selectedEdu.equals("etc")){
+                            selectedEdu = edu_text.text.toString()
+                        }
+
+
+                        val personalData = PersonalData(
+                            node_kn,
+                            selectedGender,
+                            birth_year.text.toString() + "." + birth_month.text.toString(),
+                            selectedRace,
+                            selectedCountry,
+                            selectedAdmin,
+                            selectedCity,
+                            selectedJob1,
+                            selectedJob2,
+                            selectedJob3,
+                            selectedJob4,
+                            annual_income.text.toString().toInt(),
+                            selectedEdu
+                        )
+
                         val addRunnable = Runnable {
-                            val personalData = PersonalData(
-                                node_kn,
-                                gender_text.text.toString(),
-                                birth_year.text.toString() + "." + birth_month.text.toString(),
-                                race_text.text.toString(),
-                                country_text.text.toString() + "//" + admin_text.text.toString() + "//" + city_text.text.toString(),
-                                job_text.text.toString(),
-                                annual_income.text.toString().toInt(),
-                                edu_text.text.toString()
-                            )
+
                             if (himsdb?.personalDataDAO()?.getByNodeKn(node_kn) == null){
                                 himsdb?.personalDataDAO()?.insert(personalData)
                             }else{
@@ -1045,6 +1161,13 @@ class CreatePrivateInformation : AppCompatActivity() {
                         }
                         val addThread = Thread(addRunnable)
                         addThread.start()
+
+                        server?.refreshCertKey(node_kn)?.enqueue(object : Callback<Void> {
+                            override fun onFailure(call: Call<Void>, t: Throwable) {
+                            }
+                            override fun onResponse(call: Call<Void>,response: Response<Void>) {
+                            }
+                        })
 
                         intent = Intent(this, HealthView::class.java)
                         intent.putExtra("node_kn", node_kn)

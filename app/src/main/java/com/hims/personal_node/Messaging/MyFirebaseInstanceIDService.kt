@@ -1,50 +1,69 @@
 package com.hims.personal_node
 
-import android.content.Context
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.iid.FirebaseInstanceId
-import com.hims.personal_node.Model.Message.Message
-import com.hims.personal_node.Model.Message.NodeInfo
-import com.hims.personal_node.Model.ParsingJSON
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-
 object MyFirebaseInstanceIDService {
 
-    internal fun initToken(context: Context, message: Message) {
-        FirebaseInstanceId.getInstance().instanceId
-            .addOnCompleteListener(OnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    return@OnCompleteListener
-                }
-                val token = task.result!!.token
-                saveToken(token, context, message)
-            })
-//        FirebaseInstanceId.getInstance().deleteInstanceId()
-    }
-
-    private fun saveToken(token: String, context: Context, message: Message) {
-        var server: RetrofitService?
-        var retrofit = Retrofit.Builder()
-            .baseUrl(context.getString(R.string.HIMS_Server_AP))
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        server = retrofit.create(RetrofitService::class.java)
-        var nodeInfo = NodeInfo(null, message.sender, null, token, null)
-
-        var jsonValue = ParsingJSON.modelToJson(nodeInfo)
-        message.value =  EncryptionAES.encryptAES(jsonValue, message.aes_key!!)
-        message.sha_key = EncryptionSHA.encryptSha(jsonValue)
-        message.aes_key = EncryptionRSA.encryptByOtherKey(message.aes_key!!, message.public_key!!)
-
-        server?.updateNodeAP(message)?.enqueue(object : Callback<Boolean> {
-            override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
-            }
-            override fun onFailure(call: Call<Boolean>, t: Throwable) {
-            }
-        })
-    }
+//    internal fun initToken(context: Context, nodeInfo: NodeInfo) {
+//        FirebaseInstanceId.getInstance().instanceId
+//            .addOnCompleteListener(OnCompleteListener { task ->
+//                if (!task.isSuccessful) {
+//                    return@OnCompleteListener
+//                }
+//                nodeInfo.node_ap = task.result!!.token
+//                saveToken(context, nodeInfo)
+//            })
+////        FirebaseInstanceId.getInstance().deleteInstanceId()
+//    }
+//
+//    private fun saveToken(context: Context, nodeInfo: NodeInfo) {
+//        var server: RetrofitService?
+//        var retrofit = Retrofit.Builder()
+//            .baseUrl(context.getString(R.string.HIMS_Server_AP))
+//            .addConverterFactory(NullOnEmptyConverterFactory())
+//            .addConverterFactory(ScalarsConverterFactory.create())
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build()
+//        server = retrofit.create(RetrofitService::class.java)
+//
+//        //서버 공개키 획듯
+//        server?.getServerPublicKey(nodeInfo.node_uid!!)?.enqueue(object : Callback<String> {
+//            override fun onResponse(call: Call<String>, response: Response<String>) {
+//                var public_key = response.body().toString()
+//                if (public_key != "null") {
+//                    var aes_key = EncryptionAES.init()
+//                    var jsonValue = ParsingJSON.modelToJson(nodeInfo)
+//
+//                    var map:MutableMap<String, String> = mutableMapOf()
+//                    map["message_type"] = "update_nodeinfo"
+//                    map["message_value"] = jsonValue
+//
+//                    var jsonMessage = ParsingJSON.modelToJson(map)
+//
+//                    var value = EncryptionAES.encryptAES(jsonMessage, aes_key)
+//                    var enAes_key = EncryptionRSA.encryptByOtherKey(aes_key, public_key)
+//                    var sha_key = EncryptionSHA.encryptSha(jsonValue)
+//                    var message = Message(
+//                        "center",
+//                        nodeInfo.node_kn,
+//                        value,
+//                        public_key,
+//                        enAes_key,
+//                        sha_key
+//                    )
+//
+////                    server?.updateNodeAP(message)?.enqueue(object : Callback<Boolean> {
+////                        override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+////                            var result = response.body()
+////                            if (!result!!){
+////                                Toast.makeText(context, "Fail Join", Toast.LENGTH_LONG).show()
+////                            }
+////                        }
+////                        override fun onFailure(call: Call<Boolean>, t: Throwable) {
+////                        }
+////                    })
+//                }
+//            }
+//            override fun onFailure(call: Call<String>, t: Throwable) {
+//            }
+//        })
+//    }
 }

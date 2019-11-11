@@ -1,21 +1,22 @@
 package com.hims.personal_node.Model.Health
 
-import androidx.annotation.NonNull
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import androidx.room.*
 
-@Entity(tableName = "Health",
-    indices = [Index(value = arrayOf("_id"), unique = true)])
+@Entity(tableName = "Health")
 data class Health(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "_id")
-    var _id: Long?,
-    @ColumnInfo(name = "provider_kn")
-    var provider_kn:String,
-    @ColumnInfo(name = "genDate")
-    var genDate: String,
+    @PrimaryKey
+    @ColumnInfo(name = "subject_health_no")
+    var subject_health_no: Long?,
+    @ColumnInfo(name = "issuer_health_no")
+    var issuer_health_no: Long?,
+    @ColumnInfo(name = "issuer_node_kn")
+    var node_kn:String?,
+    @ColumnInfo(name = "physician_id")
+    var physician_id:String?,
+    @ColumnInfo(name = "patient_no")
+    var patient_no:String?,
+    @ColumnInfo(name = "reg_date")
+    var reg_date: String?,
     @ColumnInfo(name = "sLevel")
     var sLevel:Int = 0
 )

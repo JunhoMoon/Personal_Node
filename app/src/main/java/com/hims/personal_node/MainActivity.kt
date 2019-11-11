@@ -13,6 +13,7 @@ import com.firebase.ui.auth.data.model.UserCancellationException
 import com.google.firebase.auth.FirebaseAuth
 import com.hims.personal_node.DataMamager.DeviceDB
 import com.hims.personal_node.Messaging.NullOnEmptyConverterFactory
+import com.hims.personal_node.Model.Health.Health
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -92,9 +93,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        var check:Boolean = false
-
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == Activity.RESULT_OK) {
                 val user = FirebaseAuth.getInstance().currentUser
@@ -105,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
                 server = retrofit.create(RetrofitService::class.java)
-                server.getNodeInfoByUID(user!!.uid)?.enqueue(object : Callback<String?> {
+                server.getNodeInfoByUID(user!!.uid, "personal")?.enqueue(object : Callback<String?> {
                     override fun onFailure(call: Call<String?>, t: Throwable) {
                         messageToast("Server Connect Error : " + t.message)
                     }
@@ -114,35 +112,44 @@ class MainActivity : AppCompatActivity() {
                         var intent:Intent? = null
                         if (node_kn == "null"){
                             intent = Intent(this@MainActivity, CreateNodeInfo::class.java)
+                            startActivity(intent)
+                            finish()
                         } else {
                             val addRunnable = Runnable {
                                 if (deviceDB?.DeviceUserDAO()?.checkDevice(node_kn) == 1){
                                     val addRunnable2 = Runnable{
                                         himsdDB = HIMSDB.getInstance(this@MainActivity, node_kn)
                                         if (himsdDB?.personalDataDAO()?.checkPersonalData() == 1){
+                                            server.refreshCertKey(node_kn).execute()
                                             intent = Intent(this@MainActivity, HealthView::class.java)
                                             intent!!.putExtra("node_kn", node_kn)
+                                            startActivity(intent)
+                                            finish()
                                         }else{
                                             intent = Intent(this@MainActivity, CreatePrivateInformation::class.java)
                                             intent!!.putExtra("node_kn", node_kn)
+                                            startActivity(intent)
+                                            finish()
                                         }
+//                                        val addRunnable3 = Runnable{
+//                                            var health = Health(0,"test", "2019.01.01", 1)
+//                                            himsdDB?.healthDAO()?.insert(health)
+//                                        }
+//                                        val addThread3 = Thread(addRunnable3)
+//                                        addThread3.start()
                                     }
                                     val addThread2 = Thread(addRunnable2)
                                     addThread2.start()
                                 }else{
                                     intent = Intent(this@MainActivity, ChangeDevice::class.java)
                                     intent!!.putExtra("node_kn", node_kn)
+                                    startActivity(intent)
+                                    finish()
                                 }
                             }
                             val addThread = Thread(addRunnable)
                             addThread.start()
                         }
-                        do {
-                            if (intent!=null){
-                                startActivity(intent)
-                                finish()
-                            }
-                        }while (intent==null)
                     }
                 })
             } else {

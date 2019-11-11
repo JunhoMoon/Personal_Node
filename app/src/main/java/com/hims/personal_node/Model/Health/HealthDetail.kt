@@ -5,23 +5,24 @@ import com.hims.personal_node.Model.Health.Health
 
 @Entity(
     tableName = "HealthDetail",
+    primaryKeys = ["health_no", "health_detail_no"],
     foreignKeys = [ForeignKey(
         entity = Health::class,
-        parentColumns = arrayOf("_id"),
-        childColumns = arrayOf("healthId")
-    )],
-    indices = [Index(value = arrayOf("healthId"), unique = false)]
+        parentColumns = arrayOf("subject_health_no"),
+        childColumns = arrayOf("health_no")
+    )]
 )
 data class HealthDetail(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "_id")
-    var _id: Long,
-    @ColumnInfo(name = "dataName")
-    var dataName: String,
-    @ColumnInfo(name = "type")
-    var type: String,
-    @ColumnInfo(name = "value")
-    var value: String,
-    @ColumnInfo(name = "healthId")
-    var healthId: Long
+    @ColumnInfo(name = "health_no")
+    var health_no: Long,
+    @ColumnInfo(name = "health_detail_no")
+    var health_detail_no: Long,
+    @ColumnInfo(name = "data_name")
+    var data_name:String?,
+    @ColumnInfo(name = "data_type")
+    var data_type:String?,
+    @ColumnInfo(name = "data_text_value")
+    var data_text_value: String?,
+    @ColumnInfo(name = "data_num_value")
+    var data_num_value:Double?
 )

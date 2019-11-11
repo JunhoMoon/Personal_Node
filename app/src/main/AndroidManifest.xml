@@ -12,7 +12,7 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_ic_notification"/>
     <meta-data
-            android:name="com.google.firebase.messaging.default_notification_color"
+            android:name="com.google.firebase.messagingMyFirebaseMessagingService.default_notification_color"
             android:resource="@color/colorAccent"/>
     <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
@@ -27,6 +27,20 @@
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:usesCleartextTraffic="true"
             tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".Activitys.Detail.HealthDetailViewPage">
+        </activity>
+        <activity android:name=".Activitys.Detail.HealthDetail">
+        </activity>
+        <activity android:name=".Activitys.Detail.HealthMessageAddHealthDetail">
+        </activity>
+        <activity android:name=".Activitys.Detail.HealthMessageAddPhysicianDetail">
+        </activity>
+        <activity android:name=".Activitys.Detail.HealthMessageAddMappingDetail">
+        </activity>
+        <activity android:name=".Activitys.Detail.HealthMessageDetail">
+        </activity>
+        <activity android:name=".Activitys.Detail.HealthAuthrityDetail">
+        </activity>
         <activity android:name=".ChangeDevice">
         </activity>
         <activity android:name=".HealthView">
@@ -49,6 +63,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <service
+                android:name=".MyFirebaseMessagingService"
+                android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

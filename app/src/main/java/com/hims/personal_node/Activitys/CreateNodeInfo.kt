@@ -7,13 +7,16 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.Toast
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.iid.FirebaseInstanceId
 import com.hims.personal_node.DataMamager.DeviceDB
 import com.hims.personal_node.Messaging.NullOnEmptyConverterFactory
 import com.hims.personal_node.Model.*
 import com.hims.personal_node.Model.Device.DeviceUser
+import com.hims.personal_node.Model.Message.Communication_Key
 import com.hims.personal_node.Model.Message.Message
-import com.hims.personal_node.Model.Message.NodeInfo
+import com.hims.personal_node.Model.Health.NodeInfo
 import kotlinx.android.synthetic.main.activity_create_node_info.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -139,59 +142,98 @@ class CreateNodeInfo : AppCompatActivity() {
                     nodeInfo.node_ap_type = "personal"
                     nodeInfo.node_pw = EncryptionSHA.encryptSha(node_pw.getText().toString())
 
-                    server?.getServerPublicKey(nodeInfo.node_kn!!)?.enqueue(object : Callback<String> {
-                        override fun onResponse(call: Call<String>, response: Response<String>) {
-                            var public_key = response.body().toString()
-                            if (public_key != "null") {
-                                var aes_key = EncryptionAES.init()
-                                var jsonValue = ParsingJSON.modelToJson(nodeInfo)
-                                var value = EncryptionAES.encryptAES(jsonValue, aes_key)
-                                var enAes_key = EncryptionRSA.encryptByOtherKey(aes_key, public_key)
-                                var sha_key = EncryptionSHA.encryptSha(jsonValue)
-                                var message = Message(
-                                    "center",
-                                    nodeInfo.node_kn,
-                                    value,
-                                    public_key,
-                                    enAes_key,
-                                    sha_key
-                                )
-                                server?.insertNodeInfo(message)?.enqueue(object : Callback<Boolean> {
-                                    override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
-                                        var insertResult = response.body()
-                                        if (insertResult!!) {
-                                            message.aes_key = aes_key
-                                            MyFirebaseInstanceIDService.initToken(this@CreateNodeInfo.applicationContext, message)
-                                            val addRunnable = Runnable {
-                                                val deviceUser = DeviceUser(
-                                                    user_kn.getText().toString()
-                                                )
-                                                deviceDB?.DeviceUserDAO()?.insert(deviceUser)
+                    FirebaseInstanceId.getInstance().instanceId.addOnCompleteListener(OnCompleteListener { task ->
+                        if (!task.isSuccessful) {
+                            return@OnCompleteListener
+                        }
+                        nodeInfo.node_ap = task.result!!.token
+
+                        //서버 공개키 획듯
+                        server?.getPublicKey(null, null, "center")?.enqueue(object : Callback<Communication_Key?> {
+                            override fun onResponse(call: Call<Communication_Key?>, response: Response<Communication_Key?>) {
+                                var communication_Key = response.body()
+                                if (communication_Key != null) {
+                                    var aes_key = EncryptionAES.init()
+                                    var jsonValue = ParsingJSON.modelToJson(nodeInfo)
+
+                                    var value = EncryptionAES.encryptAES(jsonValue, aes_key)
+                                    var enAes_key = EncryptionRSA.encrypt(aes_key, communication_Key.key)
+                                    var sha_key = EncryptionSHA.encryptSha(jsonValue)
+                                    var message = Message(
+                                        "center",
+                                        nodeInfo.node_kn,
+                                        value,
+                                        communication_Key.key_no,
+                                        enAes_key,
+                                        sha_key
+                                    )
+
+                                    server?.joinNode(message)?.enqueue(object : Callback<Boolean> {
+                                        override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+                                            var result = response.body()
+                                            if (!result!!){
+                                                messageToast("Unknown error\nDo the whole process again.\nContact system administrator if the error persists.")
+                                                checkResult = false
+                                                user_kn.isEnabled = true
+                                                bt_check_kn.setText("CHECK")
+                                                user_kn.setBackgroundColor(Color.WHITE)
+                                                user_kn.setText("")
+                                                user_kn.requestFocus()
+                                                server?.deleteKey(communication_Key.key_no, "center")?.enqueue(object : Callback<Void> {
+                                                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                                                    }
+                                                    override fun onResponse(call: Call<Void>,response: Response<Void>) {
+                                                    }
+                                                })
+                                            }else{
+                                                val addRunnable = Runnable {
+                                                    val deviceUser = DeviceUser(nodeInfo.node_kn!!, null)
+                                                    deviceDB?.DeviceUserDAO()?.insert(deviceUser)
+                                                }
+                                                val addThread = Thread(addRunnable)
+                                                addThread.start()
+
+                                                server?.refreshCertKey(nodeInfo.node_kn!!)?.enqueue(object : Callback<Void> {
+                                                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                                                    }
+                                                    override fun onResponse(call: Call<Void>,response: Response<Void>) {
+                                                    }
+                                                })
+
+                                                var intent = Intent(this@CreateNodeInfo, CreatePrivateInformation::class.java)
+                                                intent.putExtra("node_kn", nodeInfo.node_kn)
+                                                startActivity(intent)
+                                                finish()
                                             }
-                                            val addThread = Thread(addRunnable)
-                                            addThread.start()
-                                            var intent = Intent(this@CreateNodeInfo, CreatePrivateInformation::class.java)
-                                            intent.putExtra("node_kn", nodeInfo.node_kn)
-                                            server?.deletePublicKey(message)
-                                            startActivity(intent)
-                                            finish()
-                                        } else {
-                                            messageToast("Unknown error\nDo the whole process again.\nContact system administrator if the error persists.")
+                                        }
+                                        override fun onFailure(call: Call<Boolean>, t: Throwable) {
+                                            messageToast("Connection Error: "+t.message)
                                             checkResult = false
                                             user_kn.isEnabled = true
                                             bt_check_kn.setText("CHECK")
                                             user_kn.setBackgroundColor(Color.WHITE)
                                             user_kn.setText("")
                                             user_kn.requestFocus()
-                                            server?.deletePublicKey(message)
+                                            server?.deleteKey(communication_Key.key_no, "center")?.enqueue(object : Callback<Void> {
+                                                override fun onFailure(call: Call<Void>, t: Throwable) {
+                                                }
+                                                override fun onResponse(call: Call<Void>,response: Response<Void>) {
+                                                }
+                                            })
                                         }
-                                    }
-                                    override fun onFailure(call: Call<Boolean>, t: Throwable) {
-                                        messageToast("Connection Error2: "+t.message)
-                                    }
-                                })
-                            }else{
-                                messageToast("Unknown error\nDo the whole process again.\nContact system administrator if the error persists.")
+                                    })
+                                }else{
+                                    messageToast("Unknown error\nDo the whole process again.\nContact system administrator if the error persists.")
+                                    checkResult = false
+                                    user_kn.isEnabled = true
+                                    bt_check_kn.setText("CHECK")
+                                    user_kn.setBackgroundColor(Color.WHITE)
+                                    user_kn.setText("")
+                                    user_kn.requestFocus()
+                                }
+                            }
+                            override fun onFailure(call: Call<Communication_Key?>, t: Throwable) {
+                                messageToast("Connection Error: "+t.message)
                                 checkResult = false
                                 user_kn.isEnabled = true
                                 bt_check_kn.setText("CHECK")
@@ -199,10 +241,7 @@ class CreateNodeInfo : AppCompatActivity() {
                                 user_kn.setText("")
                                 user_kn.requestFocus()
                             }
-                        }
-                        override fun onFailure(call: Call<String>, t: Throwable) {
-                            messageToast("Connection Error: "+t.message)
-                        }
+                        })
                     })
                 }
             }

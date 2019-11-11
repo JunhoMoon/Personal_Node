@@ -8,16 +8,16 @@ import com.hims.personal_node.DataMamager.*
 import com.hims.personal_node.Model.Health.*
 import com.hims.personal_node.Model.Personal.*
 
-@Database(entities = [PersonalData::class, HealthHistory::class, Health::class, HealthConsensus::class, HealthDetail::class, HealthLotary::class, HealthMessage::class, HealthAuthority::class], version = 1, exportSchema = false)
+@Database(entities = [PersonalData::class, HealthHistory::class, Health::class, HealthNotary::class,HealthDetail::class, HealthMessage::class, HealthAuthority::class, PrimaryPhysician::class], version = 13, exportSchema = false)
 abstract class HIMSDB: RoomDatabase(){
     abstract fun personalDataDAO(): PersonalDataDAO
     abstract fun healthHistoryDAO():HealthHistoryDAO
     abstract fun healthDAO():HealthDAO
-    abstract fun healthConsensusDAO():HealthConsensusDAO
     abstract fun healthDetailDAO(): HealthDetailDAO
-    abstract fun healthLotaryDAO():HealthLotaryDAO
+    abstract fun healthNotaryDAO():HealthNotaryDAO
     abstract fun healthMessageDAO():HealthMessageDAO
     abstract fun healthAuthorityDAO():HealthAuthorityDAO
+    abstract fun primaryPhysicianDAO():PrimaryPhysicianDAO
 
     companion object {
         private var INSTANCE: HIMSDB? = null

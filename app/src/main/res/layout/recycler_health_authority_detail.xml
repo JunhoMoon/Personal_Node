@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginBottom="10dp"
+              android:paddingBottom="3dp"
+              android:paddingTop="3dp"
+android:background="@color/baseColor">
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView
+                    android:id="@+id/health_authority_primaryphysician_id"
+                    android:layout_width="110dp"
+                    android:textAlignment="center"
+                    android:textSize="12dp"
+                    android:textColor="@color/colorWhite"
+                    android:textStyle="bold|italic"
+                    android:layout_height="wrap_content"/>
+            <TextView
+                    android:id="@+id/health_authority_primaryphysician_name"
+                    android:layout_width="110dp"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:textSize="12dp"
+                    android:textColor="@color/colorWhite"
+                    android:textStyle="bold"
+                    android:layout_marginStart="5dp"/>
+            <TextView
+                    android:id="@+id/health_authority_primaryphysician_regdate"
+                    android:layout_width="110dp"
+                    android:layout_height="wrap_content"
+                    android:textAlignment="center"
+                    android:textSize="12dp"
+                    android:textColor="@color/colorWhite"
+                    android:textStyle="bold"
+                    android:layout_marginStart="5dp"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+            <Switch
+                    android:text="Write"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="50dp"
+                    android:id="@+id/health_authrity_detail_primaryphysician_write_bt"/>
+            <Switch
+                    android:text="Read"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="50dp"
+                    android:id="@+id/health_authrity_detail_primaryphysician_read_bt"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

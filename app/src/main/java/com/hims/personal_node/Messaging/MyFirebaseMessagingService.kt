@@ -9,15 +9,38 @@ import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import android.util.Log
-//import androidx.work.OneTimeWorkRequest
-//import androidx.work.WorkManager
-//import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.hims.personal_node.DataMamager.DeviceDB
+import com.hims.personal_node.Messaging.NullOnEmptyConverterFactory
+import com.hims.personal_node.Model.Device.DeviceUser
+import com.hims.personal_node.Model.Health.*
+import com.hims.personal_node.Model.Message.Message
+import com.hims.personal_node.Model.Message.MessageStack
+import com.hims.personal_node.Model.Message.NotaryData
+import com.hims.personal_node.Model.ParsingJSON
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
+import java.sql.Timestamp
 
 class MyFirebaseMessagingService : com.google.firebase.messaging.FirebaseMessagingService() {
+    private var deviceDB: DeviceDB? = null
+    private var himsdbDB: HIMSDB? = null
+    private lateinit var server: RetrofitService
+
+    val gson = Gson()
 
     // 메시지 수신
     override fun onMessageReceived(remoteMessage: RemoteMessage?) {
+        var context = this
+        deviceDB = DeviceDB.getInstance(context)
+
         // [START_EXCLUDE]
         // There are two types of messages data messages and notification messages. Data messages are handled
         // here in onMessageReceived whether the app is in the foreground or background. Data messages are the type
@@ -35,6 +58,443 @@ class MyFirebaseMessagingService : com.google.firebase.messaging.FirebaseMessagi
         // Check if message contains a data payload.
         remoteMessage?.data?.isNotEmpty()?.let {
             Log.d(TAG, "Message data payload: " + remoteMessage.data)
+
+            var data = remoteMessage.data
+
+            if (data["type"].equals("update_cert_key")) {
+                var node_kn = data["node_kn"]
+                var cert_key = data["cert_key"]
+
+                var retrofit = Retrofit.Builder()
+                    .baseUrl(getString(R.string.HIMS_Server_AP))
+                    .addConverterFactory(NullOnEmptyConverterFactory())
+                    .addConverterFactory(ScalarsConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                server = retrofit.create(RetrofitService::class.java)
+                server.checkCertKey(node_kn!!, cert_key!!)?.enqueue(object : Callback<Boolean?> {
+                    override fun onFailure(call: Call<Boolean?>, t: Throwable) {
+                        server.refreshCertKey(node_kn).execute()
+                    }
+
+                    override fun onResponse(call: Call<Boolean?>, response: Response<Boolean?>) {
+                        var check = response.body()
+                        if (check == true) {
+                            var deviceUser = DeviceUser(node_kn, cert_key)
+                            val addRunnable = Runnable {
+                                deviceDB?.DeviceUserDAO()?.update(deviceUser)
+                            }
+                            val addThread = Thread(addRunnable)
+                            addThread.start()
+                        } else {
+                            server.refreshCertKey(node_kn).execute()
+                        }
+                    }
+                })
+            } else if (data["type"].equals("node_mapping")) {
+                var target = data["target"]
+                var message_stack_no = data["message_stack_no"]?.toLong()
+                if (target != null && message_stack_no != null) {
+                    val addRunnable = Runnable {
+                        var deviceUser = deviceDB?.DeviceUserDAO()?.getByNodeKN(target)
+                        if (deviceUser != null){
+                            var retrofit = Retrofit.Builder()
+                                .baseUrl(getString(R.string.HIMS_Server_AP))
+                                .addConverterFactory(NullOnEmptyConverterFactory())
+                                .addConverterFactory(ScalarsConverterFactory.create())
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .build()
+                            server = retrofit.create(RetrofitService::class.java)
+                            server.getMessageStack(message_stack_no, deviceUser.user_kn, deviceUser.cert_key!!)?.enqueue(object : Callback<MessageStack?> {
+                                override fun onFailure(call: Call<MessageStack?>, t: Throwable) {
+                                }
+                                override fun onResponse(call: Call<MessageStack?>, response: Response<MessageStack?>) {
+                                    var messageStack = response.body()
+                                    var server1: RetrofitService
+                                    var retrofit1 = Retrofit.Builder()
+                                        .baseUrl("http://"+messageStack!!.sender_ap)
+                                        .addConverterFactory(NullOnEmptyConverterFactory())
+                                        .addConverterFactory(ScalarsConverterFactory.create())
+                                        .addConverterFactory(GsonConverterFactory.create())
+                                        .build()
+                                    server1 = retrofit1.create(RetrofitService::class.java)
+                                    server1.getMessage(messageStack.stack_no!!, deviceUser.user_kn, deviceUser.cert_key!!)?.enqueue(object : Callback<Message?> {
+                                        override fun onFailure(call: Call<Message?>, t: Throwable) {
+                                        }
+                                        override fun onResponse(call: Call<Message?>, response: Response<Message?>) {
+                                            var message = response.body()
+                                            if (message != null){
+                                                if (message.receiver.equals(deviceUser.user_kn)){
+                                                    server.getPrivateKey(deviceUser.user_kn, deviceUser.cert_key,message.key_no!!)?.enqueue(object : Callback<String?> {
+                                                        override fun onFailure(call: Call<String?>, t: Throwable) {
+                                                        }
+                                                        override fun onResponse(call: Call<String?>, response: Response<String?>) {
+                                                            var key = response.body()
+                                                            var aes_key = EncryptionRSA.decrypt(message.aes_key!!, key!!)
+                                                            var jsonValue = EncryptionAES.decryptAES(message.value!!, aes_key)
+                                                            if (EncryptionSHA.encryptSha(jsonValue).equals(message.sha_key)){
+                                                                var nodeMappingMessage = gson.fromJson(jsonValue, HealthAuthorityMessage::class.java)
+                                                                var healthAuthority = HealthAuthority(nodeMappingMessage.node_kn, nodeMappingMessage.node_name, nodeMappingMessage.patient_no, nodeMappingMessage.reg_date.toString(), 0, 0)
+                                                                var time = System.currentTimeMillis()
+                                                                var tsTemp = Timestamp(time)
+                                                                var healthMessage = HealthMessage(null, healthAuthority.node_kn, data["type"]!!, gson.toJson(healthAuthority), tsTemp.toString())
+                                                                himsdbDB = HIMSDB.getInstance(context, deviceUser.user_kn)
+                                                                val addRunnable2 = Runnable {
+                                                                    himsdbDB?.healthMessageDAO()?.insert(healthMessage)
+                                                                }
+                                                                val addThread2 = Thread(addRunnable2)
+                                                                addThread2.start()
+                                                                var notiMessage = "New agency : "+nodeMappingMessage.node_name
+                                                                sendNotification(notiMessage)
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    }
+                    val addThread = Thread(addRunnable)
+                    addThread.start()
+                }
+            }else if (data["type"].equals("addPrimaryPhysician")) {
+                var target = data["target"]
+                var message_stack_no = data["message_stack_no"]?.toLong()
+                if (target != null && message_stack_no != null) {
+                    val addRunnable = Runnable {
+                        var deviceUser = deviceDB?.DeviceUserDAO()?.getByNodeKN(target)
+                        if (deviceUser != null){
+                            var retrofit = Retrofit.Builder()
+                                .baseUrl(getString(R.string.HIMS_Server_AP))
+                                .addConverterFactory(NullOnEmptyConverterFactory())
+                                .addConverterFactory(ScalarsConverterFactory.create())
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .build()
+                            server = retrofit.create(RetrofitService::class.java)
+                            server.getMessageStack(message_stack_no, deviceUser.user_kn, deviceUser.cert_key!!)?.enqueue(object : Callback<MessageStack?> {
+                                override fun onFailure(call: Call<MessageStack?>, t: Throwable) {
+                                }
+                                override fun onResponse(call: Call<MessageStack?>, response: Response<MessageStack?>) {
+                                    var messageStack = response.body()
+                                    var server1: RetrofitService
+                                    var retrofit1 = Retrofit.Builder()
+                                        .baseUrl("http://"+messageStack!!.sender_ap)
+                                        .addConverterFactory(NullOnEmptyConverterFactory())
+                                        .addConverterFactory(ScalarsConverterFactory.create())
+                                        .addConverterFactory(GsonConverterFactory.create())
+                                        .build()
+                                    server1 = retrofit1.create(RetrofitService::class.java)
+                                    server1.getMessage(messageStack.stack_no!!, deviceUser.user_kn, deviceUser.cert_key!!)?.enqueue(object : Callback<Message?> {
+                                        override fun onFailure(call: Call<Message?>, t: Throwable) {
+                                        }
+                                        override fun onResponse(call: Call<Message?>, response: Response<Message?>) {
+                                            var message = response.body()
+                                            if (message != null){
+                                                if (message.receiver.equals(deviceUser.user_kn)){
+                                                    server.getPrivateKey(deviceUser.user_kn, deviceUser.cert_key,message.key_no!!)?.enqueue(object : Callback<String?> {
+                                                        override fun onFailure(call: Call<String?>, t: Throwable) {
+                                                        }
+                                                        override fun onResponse(call: Call<String?>, response: Response<String?>) {
+                                                            var key = response.body()
+                                                            var aes_key = EncryptionRSA.decrypt(message.aes_key!!, key!!)
+                                                            var jsonValue = EncryptionAES.decryptAES(message.value!!, aes_key)
+                                                            if (EncryptionSHA.encryptSha(jsonValue).equals(message.sha_key)){
+                                                                // 수신 형태별 변경
+                                                                var primaryPhysicianMessage = gson.fromJson(jsonValue, PrimaryPhysicianMessage::class.java)
+                                                                var primaryPhysician = PrimaryPhysician(primaryPhysicianMessage.node_kn, primaryPhysicianMessage.primaryPhysician_id,
+                                                                    primaryPhysicianMessage.primaryPhysician_name!!, primaryPhysicianMessage.reg_date,0, 0
+                                                                )
+                                                                himsdbDB = HIMSDB.getInstance(context, deviceUser.user_kn)
+                                                                val addRunnable2 = Runnable {
+                                                                    var healthAuthority = himsdbDB?.healthAuthorityDAO()?.getByNodeKN(primaryPhysician.node_kn)
+                                                                    if (healthAuthority != null){
+                                                                        if (healthAuthority.record_auth == 1){
+                                                                            himsdbDB?.primaryPhysicianDAO()?.insert(primaryPhysician)
+
+                                                                            server1.acceptPrimaryPhysician(deviceUser.user_kn, deviceUser.cert_key!!, primaryPhysician!!.primaryPhysician_id)?.enqueue(object :
+                                                                                Callback<Void?> {
+                                                                                override fun onFailure(call: Call<Void?>, t: Throwable) {
+                                                                                }
+                                                                                override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
+                                                                                }
+                                                                            })
+                                                                        }else{
+                                                                            var time = System.currentTimeMillis()
+                                                                            var tsTemp = Timestamp(time)
+                                                                            var healthMessage = HealthMessage(null, primaryPhysicianMessage.node_kn, data["type"]!!, gson.toJson(primaryPhysician), tsTemp.toString())
+                                                                            himsdbDB?.healthMessageDAO()?.insert(healthMessage)
+                                                                        }
+                                                                    }else{
+                                                                        var time = System.currentTimeMillis()
+                                                                        var tsTemp = Timestamp(time)
+                                                                        var healthMessage = HealthMessage(null, primaryPhysicianMessage.node_kn, data["type"]!!, gson.toJson(primaryPhysician), tsTemp.toString())
+                                                                        himsdbDB?.healthMessageDAO()?.insert(healthMessage)
+                                                                    }
+                                                                }
+                                                                val addThread2 = Thread(addRunnable2)
+                                                                addThread2.start()
+                                                                var notiMessage = "New Primary Physician : "+ primaryPhysician.primaryPhysician_name
+                                                                sendNotification(notiMessage)
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    }
+                    val addThread = Thread(addRunnable)
+                    addThread.start()
+                }
+            }else if (data["type"].equals("recordHealthData")) {
+                var target = data["target"]
+                var message_stack_no = data["message_stack_no"]?.toLong()
+                if (target != null && message_stack_no != null) {
+                    val addRunnable = Runnable {
+                        var deviceUser = deviceDB?.DeviceUserDAO()?.getByNodeKN(target)
+                        if (deviceUser != null){
+                            var retrofit = Retrofit.Builder()
+                                .baseUrl(getString(R.string.HIMS_Server_AP))
+                                .addConverterFactory(NullOnEmptyConverterFactory())
+                                .addConverterFactory(ScalarsConverterFactory.create())
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .build()
+                            server = retrofit.create(RetrofitService::class.java)
+                            server.getMessageStack(message_stack_no, deviceUser.user_kn, deviceUser.cert_key!!)?.enqueue(object : Callback<MessageStack?> {
+                                override fun onFailure(call: Call<MessageStack?>, t: Throwable) {
+                                }
+                                override fun onResponse(call: Call<MessageStack?>, response: Response<MessageStack?>) {
+                                    var messageStack = response.body()
+                                    var server1: RetrofitService
+                                    var retrofit1 = Retrofit.Builder()
+                                        .baseUrl("http://"+messageStack!!.sender_ap)
+                                        .addConverterFactory(NullOnEmptyConverterFactory())
+                                        .addConverterFactory(ScalarsConverterFactory.create())
+                                        .addConverterFactory(GsonConverterFactory.create())
+                                        .build()
+                                    server1 = retrofit1.create(RetrofitService::class.java)
+                                    server1.getMessage(messageStack.stack_no!!, deviceUser.user_kn, deviceUser.cert_key!!)?.enqueue(object : Callback<Message?> {
+                                        override fun onFailure(call: Call<Message?>, t: Throwable) {
+                                        }
+                                        override fun onResponse(call: Call<Message?>, response: Response<Message?>) {
+                                            var message = response.body()
+                                            if (message != null){
+                                                if (message.receiver.equals(deviceUser.user_kn)){
+                                                    server.getPrivateKey(deviceUser.user_kn, deviceUser.cert_key,message.key_no!!)?.enqueue(object : Callback<String?> {
+                                                        override fun onFailure(call: Call<String?>, t: Throwable) {
+                                                        }
+                                                        override fun onResponse(call: Call<String?>, response: Response<String?>) {
+                                                            var key = response.body()
+                                                            var aes_key = EncryptionRSA.decrypt(message.aes_key!!, key!!)
+                                                            var jsonValue = EncryptionAES.decryptAES(message.value!!, aes_key)
+                                                            if (EncryptionSHA.encryptSha(jsonValue).equals(message.sha_key)){
+                                                                // 수신 형태별 변경
+                                                                var health: Health
+                                                                var jsonObj = JsonParser().parse(jsonValue) as JsonObject
+
+                                                                var details:MutableList<HealthDetail> = mutableListOf()
+                                                                health = gson.fromJson(jsonObj.get("health"), Health::class.java)
+
+                                                                for(item in jsonObj.getAsJsonArray("healthDetail")){
+                                                                    var detail = gson.fromJson(item, HealthDetail::class.java)
+                                                                    details.add(detail)
+                                                                }
+
+                                                                himsdbDB = HIMSDB.getInstance(context, deviceUser.user_kn)
+                                                                val addRunnable2 = Runnable {
+                                                                    var healthAuthority = himsdbDB?.healthAuthorityDAO()?.getByNodeKN(message.sender!!)
+                                                                    if (healthAuthority != null){
+                                                                        if (healthAuthority.record_auth == 1){
+                                                                            health.node_kn = message.sender!!
+
+                                                                            var rowNum:Long = if (himsdbDB?.healthDAO()?.getall2()!! != null){
+                                                                                himsdbDB?.healthDAO()?.getall2()?.size!!.toLong()
+                                                                            }else{
+                                                                                0
+                                                                            }
+                                                                            health.subject_health_no = rowNum + 1
+                                                                            himsdbDB?.healthDAO()?.insert(health)
+                                                                            for (detail in details!!){
+                                                                                detail.health_no = health.subject_health_no!!
+                                                                                himsdbDB?.healthDetailDAO()?.insert(detail)
+                                                                            }
+
+                                                                            var healthNotarys: MutableList<HealthNotary> = mutableListOf()
+
+                                                                            server.getNotaryNodeAP(deviceUser?.user_kn!!, deviceUser?.cert_key!!, message.sender!!)?.enqueue(object :
+                                                                                Callback<MutableList<NodeInfo>?> {
+                                                                                override fun onFailure(call: Call<MutableList<NodeInfo>?>, t: Throwable) {
+                                                                                }
+                                                                                override fun onResponse(call: Call<MutableList<NodeInfo>?>, response: Response<MutableList<NodeInfo>?>) {
+                                                                                    var notarys = response.body()
+                                                                                    println(details.toString())
+                                                                                    var sha = EncryptionSHA.encryptSha(gson.toJson(details))
+                                                                                    for (notary in notarys!!){
+                                                                                        var server1: RetrofitService
+                                                                                        var retrofit1 = Retrofit.Builder()
+                                                                                            .baseUrl("http://"+notary.node_ap)
+                                                                                            .addConverterFactory(NullOnEmptyConverterFactory())
+                                                                                            .addConverterFactory(ScalarsConverterFactory.create())
+                                                                                            .addConverterFactory(GsonConverterFactory.create())
+                                                                                            .build()
+                                                                                        server1 = retrofit1.create(RetrofitService::class.java)
+
+                                                                                        server1.addNotary(deviceUser?.user_kn!!, deviceUser?.cert_key!!, sha)?.enqueue(object :
+                                                                                            Callback<NotaryData?> {
+                                                                                            override fun onFailure(call: Call<NotaryData?>, t: Throwable) {
+                                                                                            }
+                                                                                            override fun onResponse(call: Call<NotaryData?>, response: Response<NotaryData?>) {
+                                                                                                var notaryData = response.body()
+                                                                                                var healthNotary = HealthNotary(health!!.subject_health_no!!, notary.node_kn!!, notaryData?.notary_data_no!!, notaryData?.reg_date.toString()!!)
+                                                                                                healthNotarys.add(healthNotary)
+
+                                                                                                var addRunnable1 = Runnable {
+                                                                                                    himsdbDB?.healthNotaryDAO()?.insert(healthNotary)
+                                                                                                }
+                                                                                                var addThread1 = Thread(addRunnable1)
+                                                                                                addThread1.start()
+                                                                                            }
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            })
+
+                                                                            server.updateLastHealthNo(deviceUser.user_kn, deviceUser.cert_key!!, health?.subject_health_no!!)?.enqueue(object :
+                                                                                Callback<Void?> {
+                                                                                override fun onFailure(call: Call<Void?>, t: Throwable) {
+                                                                                }
+                                                                                override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
+                                                                                }
+                                                                            })
+
+                                                                            Thread.sleep(1000)
+                                                                            server1.acceptHealth(deviceUser.user_kn, deviceUser.cert_key!!,health?.issuer_health_no!!, health?.subject_health_no!!, ParsingJSON.modelToJson(healthNotarys))?.enqueue(object :
+                                                                                Callback<Void?> {
+                                                                                override fun onFailure(call: Call<Void?>, t: Throwable) {
+                                                                                }
+                                                                                override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
+                                                                                }
+                                                                            })
+                                                                        }else{
+
+                                                                            var primaryPhysician = himsdbDB?.primaryPhysicianDAO()?.getByPK(message.sender!!,
+                                                                                health.physician_id!!
+                                                                            )
+                                                                            if (primaryPhysician != null){
+                                                                                if (primaryPhysician.record_auth == 1){
+                                                                                    health.node_kn = message.sender!!
+                                                                                    var rowNum:Long = if (himsdbDB?.healthDAO()?.getall2() != null){
+                                                                                        himsdbDB?.healthDAO()?.getall2()?.size!!.toLong()
+                                                                                    }else{
+                                                                                        0
+                                                                                    }
+                                                                                    health.subject_health_no = rowNum + 1
+                                                                                    himsdbDB?.healthDAO()?.insert(health)
+
+                                                                                    for (detail in details!!){
+                                                                                        detail.health_no = health.subject_health_no!!
+                                                                                        himsdbDB?.healthDetailDAO()?.insert(detail)
+                                                                                    }
+                                                                                    var healthNotarys: MutableList<HealthNotary> = mutableListOf()
+
+                                                                                    server.getNotaryNodeAP(deviceUser?.user_kn!!, deviceUser?.cert_key!!, message.sender!!)?.enqueue(object :
+                                                                                        Callback<MutableList<NodeInfo>?> {
+                                                                                        override fun onFailure(call: Call<MutableList<NodeInfo>?>, t: Throwable) {
+                                                                                        }
+                                                                                        override fun onResponse(call: Call<MutableList<NodeInfo>?>, response: Response<MutableList<NodeInfo>?>) {
+                                                                                            var notarys = response.body()
+                                                                                            println(details.toString())
+                                                                                            var sha = EncryptionSHA.encryptSha(gson.toJson(details))
+                                                                                            for (notary in notarys!!){
+                                                                                                var server1: RetrofitService
+                                                                                                var retrofit1 = Retrofit.Builder()
+                                                                                                    .baseUrl("http://"+notary.node_ap)
+                                                                                                    .addConverterFactory(NullOnEmptyConverterFactory())
+                                                                                                    .addConverterFactory(ScalarsConverterFactory.create())
+                                                                                                    .addConverterFactory(GsonConverterFactory.create())
+                                                                                                    .build()
+                                                                                                server1 = retrofit1.create(RetrofitService::class.java)
+
+                                                                                                server1.addNotary(deviceUser?.user_kn!!, deviceUser?.cert_key!!, sha)?.enqueue(object :
+                                                                                                    Callback<NotaryData?> {
+                                                                                                    override fun onFailure(call: Call<NotaryData?>, t: Throwable) {
+                                                                                                    }
+                                                                                                    override fun onResponse(call: Call<NotaryData?>, response: Response<NotaryData?>) {
+                                                                                                        var notaryData = response.body()
+                                                                                                        var healthNotary = HealthNotary(health!!.subject_health_no!!, notary.node_kn!!, notaryData?.notary_data_no!!, notaryData?.reg_date.toString()!!)
+                                                                                                        healthNotarys.add(healthNotary)
+
+                                                                                                        var addRunnable1 = Runnable {
+                                                                                                            himsdbDB?.healthNotaryDAO()?.insert(healthNotary)
+                                                                                                        }
+                                                                                                        var addThread1 = Thread(addRunnable1)
+                                                                                                        addThread1.start()
+                                                                                                    }
+                                                                                                })
+                                                                                            }
+                                                                                        }
+                                                                                    })
+
+                                                                                    server.updateLastHealthNo(deviceUser.user_kn, deviceUser.cert_key!!, health?.subject_health_no!!)?.enqueue(object :
+                                                                                        Callback<Void?> {
+                                                                                        override fun onFailure(call: Call<Void?>, t: Throwable) {
+                                                                                        }
+                                                                                        override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
+                                                                                        }
+                                                                                    })
+                                                                                    Thread.sleep(1000)
+                                                                                    server1.acceptHealth(deviceUser.user_kn, deviceUser.cert_key!!,health?.issuer_health_no!!, health?.subject_health_no!!, ParsingJSON.modelToJson(healthNotarys))?.enqueue(object :
+                                                                                        Callback<Void?> {
+                                                                                        override fun onFailure(call: Call<Void?>, t: Throwable) {
+                                                                                        }
+                                                                                        override fun onResponse(call: Call<Void?>, response: Response<Void?>) {
+                                                                                        }
+                                                                                    })
+                                                                                }else{
+                                                                                    var time = System.currentTimeMillis()
+                                                                                    var tsTemp = Timestamp(time)
+                                                                                    var healthMessage = HealthMessage(null, message.sender!!, data["type"]!!, jsonValue, tsTemp.toString())
+                                                                                    himsdbDB?.healthMessageDAO()?.insert(healthMessage)
+                                                                                }
+                                                                            }else{
+                                                                                var time = System.currentTimeMillis()
+                                                                                var tsTemp = Timestamp(time)
+                                                                                var healthMessage = HealthMessage(null, message.sender!!, data["type"]!!, jsonValue, tsTemp.toString())
+                                                                                himsdbDB?.healthMessageDAO()?.insert(healthMessage)
+                                                                            }
+                                                                        }
+                                                                    }else{
+                                                                        var time = System.currentTimeMillis()
+                                                                        var tsTemp = Timestamp(time)
+                                                                        var healthMessage = HealthMessage(null, message.sender!!, data["type"]!!, jsonValue, tsTemp.toString())
+                                                                        himsdbDB?.healthMessageDAO()?.insert(healthMessage)
+                                                                    }
+                                                                }
+                                                                val addThread2 = Thread(addRunnable2)
+                                                                addThread2.start()
+                                                                var notiMessage = "New HealthData"
+                                                                sendNotification(notiMessage)
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            }
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    }
+                    val addThread = Thread(addRunnable)
+                    addThread.start()
+                }
+            }
 
             if (/* Check if data needs to be processed by long running job */ true) {
                 // For long-running tasks (10 seconds or more) use WorkManager.
@@ -108,8 +568,10 @@ class MyFirebaseMessagingService : com.google.firebase.messaging.FirebaseMessagi
     private fun sendNotification(messageBody: String) {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-            PendingIntent.FLAG_ONE_SHOT)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0 /* Request code */, intent,
+            PendingIntent.FLAG_ONE_SHOT
+        )
 
         val channelId = getString(R.string.default_notification_channel_id)
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
@@ -125,9 +587,11 @@ class MyFirebaseMessagingService : com.google.firebase.messaging.FirebaseMessagi
 
         // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId,
+            val channel = NotificationChannel(
+                channelId,
                 "Channel human readable title",
-                NotificationManager.IMPORTANCE_DEFAULT)
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
             notificationManager.createNotificationChannel(channel)
         }
 

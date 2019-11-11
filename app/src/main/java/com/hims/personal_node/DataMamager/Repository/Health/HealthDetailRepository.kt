@@ -7,7 +7,7 @@ import com.hims.personal_node.Model.Health.HealthDetail
 
 class HealthDetailRepository (private val healthDetailDAO: HealthDetailDAO){
     @WorkerThread
-    suspend fun insert(healthDetail: HealthDetail){
+    fun insert(healthDetail: HealthDetail){
         healthDetailDAO.insert(healthDetail)
     }
     @WorkerThread

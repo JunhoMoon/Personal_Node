@@ -1,7 +1,6 @@
 package com.hims.personal_node
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -13,6 +12,7 @@ import com.google.android.material.tabs.TabLayout
 import android.graphics.PorterDuff
 import androidx.viewpager2.widget.ViewPager2
 import com.hims.personal_node.Activitys.HealthPagerAdapter
+//import com.hims.personal_node.Model.Health.Health
 
 class HealthView : AppCompatActivity() {
 
@@ -21,6 +21,7 @@ class HealthView : AppCompatActivity() {
     private var himsdb: HIMSDB? = null
 
     private var context: Context? = null
+    var node_kn: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,12 +32,40 @@ class HealthView : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
 
-        var node_kn: String? = null
         if (intent.hasExtra("node_kn")) {
             node_kn = intent.getStringExtra("node_kn")
+            himsdb = HIMSDB.getInstance(this, node_kn!!)
         } else {
             finish()
         }
+
+//        var healths:List<Health>? = null
+//        var check:Boolean = false
+//
+//        val addRunnable = Runnable{
+//            var health = Health(null, "test111", "testset", 1)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//            himsdb?.healthDAO()?.insert(health)
+//        }
+//        val addThread = Thread(addRunnable)
+//        addThread.start()
+//
+//        do {
+//            if (healths!=null){
+//                for(health in healths!!){
+//                    println("health : $health")
+//                }
+//            }
+//        }while (!check)
 
         val actionBar = supportActionBar
 
@@ -71,10 +100,7 @@ class HealthView : AppCompatActivity() {
         tab_layout!!.addTab(tab_layout!!.newTab().setIcon(R.drawable.ic_folder_open_black_24dp), true)
         tab_layout!!.addTab(tab_layout!!.newTab().setIcon(R.drawable.ic_lock_outline_black_24dp))
         tab_layout!!.addTab(tab_layout!!.newTab().setIcon(R.drawable.ic_outline_email_24px))
-        tab_layout!!.addTab(tab_layout!!.newTab().setIcon(R.drawable.ic_history_black_24dp))
-        pager.adapter = HealthPagerAdapter(supportFragmentManager, lifecycle, tab_layout.tabCount)
-        println("pager.width : "+pager.width)
-        println("pager.height : "+pager.height)
+        pager.adapter = HealthPagerAdapter(supportFragmentManager, lifecycle, tab_layout.tabCount, node_kn!!, this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

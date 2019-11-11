@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".Activitys.Detail.HealthMessageAddHealthDetail">
+
+    <TextView
+            android:text="Add Mapping Message Detail"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="20dp"
+            android:id="@+id/health_message_add_health_detail_title" app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            android:layout_marginTop="10dp"/>
+    <TextView
+            android:text="Node KN : "
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_nodekn_title"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            android:layout_marginTop="10dp"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_title"/>
+    <TextView
+            android:text="Node NN"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_nodekn"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="10dp"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_title"
+            app:layout_constraintStart_toEndOf="@+id/health_message_add_health_detail_nodekn_title"/>
+    <TextView
+            android:text="Patient No : "
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_patientno_title"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_nodekn_title"/>
+    <TextView
+            android:text="Patient No"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_patientno"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@+id/health_message_add_health_detail_patientno_title"
+            app:layout_constraintTop_toTopOf="@+id/health_message_add_health_detail_patientno_title"
+    />
+    <TextView
+            android:text="Node Rag Date : "
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_noderagdate_title"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_patientno_title"
+    />
+    <TextView
+            android:text="Node Rag Date"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_noderagdate"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@+id/health_message_add_health_detail_noderagdate_title"
+            app:layout_constraintTop_toTopOf="@+id/health_message_add_health_detail_noderagdate_title"/>
+    <TextView
+            android:text="Physician Id : "
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_physician_id_title"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_noderagdate_title"
+    />
+    <TextView
+            android:text="physician_id"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="12dp"
+            android:id="@+id/health_message_add_health_detail_physician_id"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@+id/health_message_add_health_detail_physician_id_title"
+            app:layout_constraintTop_toTopOf="@+id/health_message_add_health_detail_physician_id_title"/>
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:id="@+id/health_message_add_health_detail_details"
+                  app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_physician_id_title"
+                  app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
+                  android:layout_marginStart="8dp">
+
+    </LinearLayout>
+    <Button
+            android:text="Accept"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/health_message_add_health_detail_accept_bt"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_details"
+            android:layout_marginTop="10dp" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="30dp"/>
+    <Button
+            android:text="Reject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/health_message_add_health_detail_reject_bt"
+            app:layout_constraintTop_toBottomOf="@+id/health_message_add_health_detail_details"
+            android:layout_marginTop="10dp"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="30dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -7,7 +7,7 @@ import com.hims.personal_node.Model.Health.Health
 
 class HealthRepository(private  val healthDAO: HealthDAO){
     @WorkerThread
-    suspend fun insert(health: Health){
+    fun insert(health: Health){
         healthDAO.insert(health)
     }
     @WorkerThread
@@ -20,4 +20,5 @@ class HealthRepository(private  val healthDAO: HealthDAO){
     }
 //    val getall: List<Health> = healthDAO.getall()
     val getall: LiveData<List<Health>> = healthDAO.getall()
+//    val getall2: List<Health> = healthDAO.getall2()
 }

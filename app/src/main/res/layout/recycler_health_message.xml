@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginBottom="10dp"
+              android:paddingBottom="3dp"
+              android:paddingTop="3dp"
+android:background="@color/baseColor">
+    <TextView
+            android:id="@+id/health_message_nodekn"
+            android:layout_width="110dp"
+            android:textAlignment="center"
+            android:textSize="12dp"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold|italic"
+            android:layout_height="wrap_content"/>
+    <TextView
+            android:id="@+id/health_message_name"
+            android:layout_width="110dp"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textSize="12dp"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:layout_marginStart="5dp"/>
+    <TextView
+            android:id="@+id/health_authority_rag_date"
+            android:layout_width="110dp"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:textSize="12dp"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:layout_marginStart="5dp"/>
+</LinearLayout>

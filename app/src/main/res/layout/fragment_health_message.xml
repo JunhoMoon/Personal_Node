@@ -6,9 +6,53 @@
                                                    android:layout_height="match_parent"
                                                    tools:context=".Activitys.Fragment.Health.HealthMessage">
 
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-              android:text="HealthMessage" app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-              app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-              app:layout_constraintHorizontal_bias="0.501" app:layout_constraintTop_toTopOf="parent"/>
+    <LinearLayout android:orientation="horizontal"
+                  android:layout_width="match_parent"
+                  android:layout_height="30dp"
+                  android:paddingTop="5dp"
+                  android:layout_marginTop="8dp"
+                  android:background="@color/baseDarkColor"
+                  android:id="@+id/linearLayout" app:layout_constraintTop_toTopOf="parent">
 
+        <TextView
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textSize="12dp"
+                android:textStyle="bold"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/colorWhite"
+                android:text="Node Kn"/>
+        <TextView
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textSize="12dp"
+                android:textStyle="bold"
+                android:layout_marginStart="5dp"
+                android:textColor="@color/colorWhite"
+                android:text="Type"/>
+        <TextView
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textSize="12dp"
+                android:layout_marginStart="5dp"
+                android:textStyle="bold"
+                android:textColor="@color/colorWhite"
+                android:text="Reg. Date"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView android:layout_width="350dp"
+                                               android:layout_height="466dp"
+                                               tools:listitem="@layout/recycler_health_message"
+                                               app:layout_constraintEnd_toEndOf="parent"
+                                               android:layout_marginEnd="8dp"
+                                               app:layout_constraintStart_toStartOf="parent"
+                                               android:layout_marginStart="8dp"
+                                               android:layout_marginTop="10dp"
+                                               android:id="@+id/fragment_health_message_recycle_form"
+                                               android:scrollbars="vertical"
+                                               app:layout_constraintTop_toBottomOf="@+id/linearLayout"
+                                               android:background="@color/colorWhite"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

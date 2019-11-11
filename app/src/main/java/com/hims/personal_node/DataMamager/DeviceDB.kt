@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.hims.personal_node.Model.Device.DeviceUser
 
-@Database(entities = [DeviceUser::class], version = 1, exportSchema = false)
+@Database(entities = [DeviceUser::class], version = 11, exportSchema = false)
 abstract class DeviceDB: RoomDatabase(){
     abstract fun DeviceUserDAO(): DeviceUserDAO
 
